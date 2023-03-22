@@ -4,6 +4,19 @@ const { signToken } = require('../utils/auth');
 
 const resolvers = {
     Query: {
+        // get a single user by either their id or their username
+        getMe: async (parent, args, context) => {
+            // need to find user from decoding token. 
+            const foundUser = await User.findOne({
+                $or: [{ _id: context.user._id ? context.user._id : params.id }, { username: params.username }],
+            });
+
+            if (!foundUser) {
+                console.log('Cannot find a user with this id!')
+            }
+
+            return User.find({});
+        },
 
     },
 
@@ -31,6 +44,29 @@ const resolvers = {
 
             return { token, user };
         },
+        saveBook: async (parent, { body }, context) => {
+            const updatedBook = await Book.findOneAndUpdate(
+                { _id: context.user._id },
+                { $addToSet: { savedBooks: body } },
+                { new: true, runValidators: true }
+            );
+                console.log('updated book: ', updatedBook)
+
+                return updatedBook;
+        },
+        deleteBook: async (parent, args, context) => {
+            const updatedBook = await Book.findOneAndUpdate(
+                { _id: context.user._id },
+                { $pull: { savedBooks: { bookId: params.bookId } } },
+                { new: true }
+              );
+
+              if (!updatedBook) {
+                console.log('Error deleting book')
+              }
+
+              return updatedBook;
+        }
     }
 };
 module.exports = resolvers;
